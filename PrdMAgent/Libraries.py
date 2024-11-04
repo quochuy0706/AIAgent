@@ -1,16 +1,33 @@
 import pandas as pd
+import numpy as np
 import glob
 import os
 
-def load_hydraulic_data(file_path):
-    # Load data from a single file with whitespace delimiter and no header
-    df = pd.read_csv(file_path, sep='\s+', header=None)
-    # Determine the number of columns in the file
-    num_columns = df.shape[1]
-    # Assign column names based on the number of columns
-    df.columns = list(range(1, num_columns + 1))
-    # Add a column for load cycle ID
-    df['CycleID'] = range(1, df.shape[0] + 1)
-    # Reorder columns to place "CycleID" as the first column
-    df = df[['CycleID'] + list(range(1, num_columns + 1))]
-    return df
+def load_hydraulic_data(file_path, agg='mean'):
+    try:
+        # Load data from the file
+        arr_data = np.genfromtxt(file_path)
+        
+        # Check if data was loaded successfully
+        if arr_data.size == 0:
+            raise ValueError("File is empty or not properly formatted.")
+
+        # Aggregate data based on the specified aggregation function
+        if agg == 'mean':
+            agg_data = np.mean(arr_data, axis=1)
+        elif agg == 'median':
+            agg_data = np.median(arr_data, axis=1)
+        else:
+            raise ValueError("Invalid aggregation function. Choose 'mean' or 'median'.")
+
+        return agg_data
+
+    except IOError:
+        print(f"Error: Could not read file {file_path}. Please check if the file exists and is accessible.")
+        return None
+    except ValueError as e:
+        print(f"Error: {e}")
+        return None
+
+def export_parquet(target_path, file_name,df):
+    df.to_parquet(f"{target_path}/{file_name}.parquet", engine='pyarrow')
