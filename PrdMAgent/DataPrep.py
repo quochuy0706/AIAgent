@@ -11,16 +11,17 @@ attribute_information = {
 }
 
 attr_df = pd.DataFrame(attribute_information)
+export_parquet('Data/Silver', 'attribute_information', attr_df)
+
 
 # Create the benchmark information dataframe
-
 benchmark_description = {
     "Benchmark": [
-        "Cooler condition", "Cooler condition", "Cooler condition",
-        "Valve condition", "Valve condition", "Valve condition", "Valve condition",
-        "Internal pump leakage", "Internal pump leakage", "Internal pump leakage",
-        "Hydraulic accumulator", "Hydraulic accumulator", "Hydraulic accumulator", "Hydraulic accumulator",
-        "Stable flag", "Stable flag"
+        "Cooler_condition", "Cooler_condition", "Cooler_condition",
+        "Valve_condition", "Valve_condition", "Valve_condition", "Valve_condition",
+        "Internal_pump_leakage", "Internal_pump_leakage", "Internal_pump_leakage",
+        "Hydraulic_accumulator", "Hydraulic_accumulator", "Hydraulic_accumulator", "Hydraulic_accumulator",
+        "Stable_flag", "Stable_flag"
     ],
     "Value": [
         3, 20, 100,
@@ -39,14 +40,37 @@ benchmark_description = {
 }
 
 benchmark_df = pd.DataFrame(benchmark_description)
+export_parquet('Data/Silver', 'benchmark_df', benchmark_df)
 
-# Create all features dataframe
+# Create hydraulic dataframe
+feature_directory_path = 'Data/Features'
+all_files = [os.path.splitext(file_name)[0] for file_name in os.listdir(feature_directory_path) if os.path.isfile(os.path.join(feature_directory_path, file_name)) and file_name.endswith('.txt')]
 
-directory_path = 'Data/Features'
-all_files = [os.path.splitext(file_name)[0] for file_name in os.listdir(directory_path) if os.path.isfile(os.path.join(directory_path, file_name)) and file_name.endswith('.txt')]
+feature_df = pd.DataFrame()
 
-feature_df = {}
 for file in all_files:
-    file_path = f"{directory_path}/{file}.txt"
-    feature_df[f"{file}_df"] = load_hydraulic_data(file_path)
+    file_path = f"{feature_directory_path}/{file}.txt"
+    arr = load_hydraulic_data(file_path, 'mean')
+    feature_df[file] = arr 
+
+# Create label dataframe 
+label_df = pd.read_csv('Data/Target/profile.txt', sep='\s+', header=None)
+label_column = {
+    0: 'Cooler_condition',
+    1: 'Valve_condition',
+    2: 'Internal_pump_leakage',
+    3: 'Hydraulic_accumulator',
+    4: 'Stable_flag'
+}
+label_df.rename(columns=label_column, inplace=True)
+
+# Concat feature and label into one dataframe
+hydraulic_df = pd.concat([feature_df, label_df], axis=1)
+# Export to Parquet file for re-used purpose 
+export_parquet('Data/Silver', 'hydraulic_df', hydraulic_df)
+
+
+
+
+
 
